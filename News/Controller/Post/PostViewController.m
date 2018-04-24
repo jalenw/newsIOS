@@ -186,7 +186,7 @@
 - (IBAction)selectImage:(UIButton *)sender {
     UIImagePickerController *vc = [[UIImagePickerController alloc]init];
     vc.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
-    vc.allowsEditing = YES;
+//    vc.allowsEditing = YES;
     vc.delegate = self;
     [self presentViewController:vc animated:YES completion:nil];
 }
@@ -199,9 +199,10 @@
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<NSString *,id> *)info
 {
     [picker dismissViewControllerAnimated:YES completion:nil];
-    UIImage *image = [info objectForKey:UIImagePickerControllerEditedImage];
+    UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
     self.image = image;
     [self.addImage setImage:image forState:UIControlStateNormal];
+    [self.addImage.imageView setContentMode:UIViewContentModeScaleAspectFill];
 }
 
 - (IBAction)addNews:(UIButton *)sender {

@@ -83,7 +83,7 @@
 - (IBAction)changeAvatar:(UIButton *)sender {
     UIImagePickerController *vc = [[UIImagePickerController alloc]init];
     vc.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
-    vc.allowsEditing = YES;
+//    vc.allowsEditing = YES;
     vc.delegate = self;
     [self presentViewController:vc animated:YES completion:nil];
 }
@@ -92,8 +92,9 @@
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<NSString *,id> *)info
 {
     [picker dismissViewControllerAnimated:YES completion:nil];
-    UIImage *image = [info objectForKey:UIImagePickerControllerEditedImage];
+    UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
     [self.avatarBtn setImage:image forState:UIControlStateNormal];
+    [self.avatarBtn.imageView setContentMode:UIViewContentModeScaleAspectFill];
     self.image = image;
 }
 

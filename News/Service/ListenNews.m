@@ -140,7 +140,7 @@
 //                    }
 //                    else
 //                    if ([Tool canPlayNew:[news.news_id stringValue]]) {
-                        NSString *readString = [NSString stringWithFormat:@"%@,%@",news.news_title,news.news_content];
+                    NSString *readString = [NSString stringWithFormat:@"%@,%@",news.news_title,[news.news_content componentsSeparatedByString:@"（消息来源："][0]];
                         NSError *err = nil;
                         [[BDSSpeechSynthesizer sharedInstance]speakSentence:readString withError:&err];
                     if (err) {

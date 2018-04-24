@@ -90,7 +90,7 @@
     [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(registerDeviceToken) name:kNotificationModelAPNsChange object:nil];
     [JPUSHService setupWithOption:launchOptions appKey:@"1b1f821017d82f1d6e874e0f"
                           channel:@"channel"
-                 apsForProduction:NO];
+                 apsForProduction:YES];
     
     if (launchOptions) {
         self.remoteDict = launchOptions[UIApplicationLaunchOptionsRemoteNotificationKey];
