@@ -28,6 +28,8 @@
     NSString *productId;
 //    BOOL _getlocal;
     dispatch_semaphore_t semaphore;
+    UIScrollView *childScrollView;
+    NSArray *childArray;
 }
 @property (nonatomic, strong) NewsTabView *channelView;
 @property (nonatomic, strong) UICollectionView *collectionView;
@@ -128,10 +130,9 @@
     [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(share:) name:kNotificationShare object:nil];
     [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(like:) name:kNotificationLike object:nil];
     [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(report:) name:kNotificationReport object:nil];
-    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(reward:) name:kNotificationReward object:nil];
     [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(releaseTimer) name:@"kLogoutNotification" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidBecomeActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
-    
+  
     UIBarButtonItem *searchItem = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemSearch target:self action:@selector(search)];
     self.navigationItem.rightBarButtonItem = searchItem;
     
@@ -139,7 +140,7 @@
     self.timeLabel.textAlignment = NSTextAlignmentCenter;
     self.timeLabel.font = defaultSizeFont(17);
     
-    self.timer = [NSTimer scheduledTimerWithTimeInterval:60 target:self selector:@selector(timerForRedPoint) userInfo:nil repeats:YES];
+//    self.timer = [NSTimer scheduledTimerWithTimeInterval:60 target:self selector:@selector(timerForRedPoint) userInfo:nil repeats:YES];
     
     self.viedoView.right = ScreenWidth;
     self.viedoView.bottom = ScreenHeight - 49*3;
@@ -210,7 +211,6 @@
     [self.guide2 removeFromSuperview];
 }
 
-
 - (void)viewWillAppear:(BOOL)animated
 {
     [super viewWillAppear:animated];
@@ -240,6 +240,10 @@
 
 - (void)themeFontChange
 {
+    for (UIButton *button in childScrollView.subviews)
+    {
+        [button setFont:defaultSizeFont(17)];
+    }
     self.timeLabel.font = defaultSizeFont(17);
 }
 
@@ -256,10 +260,11 @@
     self.channelView.selectIndexPath = ^(NSIndexPath *indexPath) {
         NSDictionary *channel = [weakSelf.like objectAtIndex:indexPath.item];
         NSString *string = [channel safeStringForKey:@"channel_id"];
-        NSArray *array = [weakSelf.listData objectForKey:string];
-        if (array.count == 0) {
+//        NSArray *array = [weakSelf.listData objectForKey:string];
+//        if (array.count == 0) {
             [weakSelf getNewsList:channel];
-        }
+//        }
+        [weakSelf setChildChannelView:[channel safeArrayForKey:@"son"]];
         [weakSelf.collectionView selectItemAtIndexPath:indexPath animated:YES scrollPosition:UICollectionViewScrollPositionCenteredHorizontally];
     };
     self.channelView.addMethod = ^{
@@ -296,10 +301,73 @@
     [self.view addSubview:self.collectionView];
 }
 
+-(void)setChildChannelView:(NSArray*)array{
+    childArray = array;
+    if (childScrollView==nil) {
+        childScrollView = [[UIScrollView alloc]initWithFrame:CGRectMake(0, self.channelView.bottom, ScreenWidth, 40)];
+        childScrollView.showsVerticalScrollIndicator = NO;
+        childScrollView.showsHorizontalScrollIndicator = NO;
+        childScrollView.backgroundColor = [UIColor lightGrayColor];
+        [self.channelView.superview addSubview:childScrollView];
+    }
+    if (array.count>0) {
+        childScrollView.height = 40;
+        [childScrollView.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+        CGFloat x = 0;
+        int i = 0;
+        for (NSDictionary *channel in array) {
+            UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
+            button.tag = i;
+            [button setFont:defaultSizeFont(17)];
+            CGSize size = CGSizeMake(MAXFLOAT, 30.0f);
+            CGSize buttonSize = [[channel safeStringForKey:@"channel_content"] boundingRectWithSize:size
+                                                      options:NSStringDrawingTruncatesLastVisibleLine  | NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+                                                   attributes:@{ NSFontAttributeName:button.titleLabel.font}
+                                                      context:nil].size;
+            button.frame = CGRectMake(x, 0, buttonSize.width+20, 40);
+            [button setTitle:[channel safeStringForKey:@"channel_content"] forState:UIControlStateNormal];
+            [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+            [button setTitleColor:ThemeColor forState:UIControlStateSelected];
+            [button addTarget:self action:@selector(childChannelSelected:) forControlEvents:UIControlEventTouchUpInside];
+            [childScrollView addSubview:button];
+            if (x==0) {
+                [button setSelected:YES];
+                [self getNewsList:channel];
+            }
+            x = button.right;
+            i++;
+        }
+        [childScrollView setContentSize:CGSizeMake(x, childScrollView.height)];
+    }
+    else
+    {
+        childScrollView.height = 0;
+    }
+    CGFloat statusHeight = [UIApplication sharedApplication].statusBarFrame.size.height;
+    CGFloat navHeight = self.navigationController.navigationBar.frame.size.height;
+    CGFloat tabBarHeight = self.tabBarController.tabBar.frame.size.height;
+    self.collectionView.top = self.channelView.bottom+childScrollView.height;
+    self.collectionView.height = ScreenHeight-statusHeight-navHeight-tabBarHeight-self.channelView.height - childScrollView.height;
+    UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout*)self.collectionView.collectionViewLayout;
+    layout.itemSize = CGSizeMake(ScreenWidth, ScreenHeight-statusHeight-navHeight-tabBarHeight-self.channelView.height-childScrollView.height);
+}
+
+-(void)childChannelSelected:(UIButton*)sender
+{
+    sender.selected = YES;
+    for (UIButton *bt in childScrollView.subviews) {
+        if (bt!=sender) {
+            bt.selected = NO;
+        }
+    }
+    NSDictionary *channel = [childArray objectAtIndex:sender.tag];
+    [self getNewsList:channel];
+}
+
 - (void)getChannelList
 {
     [SVProgressHUD show];
-    [HTTPClientInstance postMethod:@"act=channel" params:nil block:^(NSDictionary *data, NSString *error, int code, NSError *requestFailed) {
+    [HTTPClientInstance postMethod:@"act=channel&op=indexList" params:nil block:^(NSDictionary *data, NSString *error, int code, NSError *requestFailed) {
         [SVProgressHUD dismiss];
         if (code == 200) {
             [self.listData removeAllObjects];
@@ -333,11 +401,26 @@
         AppDelegateInstance.likeList = [like mutableCopy];
         [AppDelegateInstance.likeList writeToFile:[AppDelegateInstance returnLikeFilePath] atomically:YES];
     }
+    else if (AppDelegateInstance.likeList.count==like.count)
+    {
+        BOOL exist = false;
+        for (NSDictionary *aDict in like) {
+            for (NSDictionary *bDict in AppDelegateInstance.likeList) {
+                if ([[aDict safeStringForKey:@"channel_id"] isEqualToString:[bDict safeStringForKey:@"channel_id"]]) {
+                    exist = true;
+                    break;
+                }
+            }
+        }
+        if(exist)
+        {
+            AppDelegateInstance.likeList = [like mutableCopy];
+            [AppDelegateInstance.likeList writeToFile:[AppDelegateInstance returnLikeFilePath] atomically:YES];
+        }
+    }
     self.like = AppDelegateInstance.likeList;
-//    self.like = like;
     self.dislike = dislike;
     self.listenManager.likeList = AppDelegateInstance.likeList;
-//    self.listenManager.likeList = like;
     for (NSDictionary *channel in self.like) {
         NSMutableArray *array = [self.listData objectForKey:[channel safeStringForKey:@"channel_id"]];
         if (!array) {
@@ -421,10 +504,9 @@
     if (!cell.tableCellDelegate) {
         cell.tableCellDelegate = self;
     }
-    NSDictionary *channel = [self.like objectAtIndex:indexPath.item];
+    NSDictionary *channel = self.nowChannel;// [self.like objectAtIndex:indexPath.item];
     NSString *string = [channel safeStringForKey:@"channel_id"];
     BOOL showdata = [[self.showData objectForKey:string] boolValue];
-    NSArray *array = [self.listData objectForKey:string];
     NSDictionary *dictionary = [self.dataDic objectForKey:string];
     cell.channel = channel;
     cell.showEnd = showdata;
@@ -436,15 +518,17 @@
 {
     int page = scrollView.contentOffset.x/ScreenWidth;
     self.channelView.selectIndex = page;
+    NSDictionary *channel = [self.like objectAtIndex:self.channelView.selectIndex];
     NSIndexPath *indexPath = [NSIndexPath indexPathForItem:page inSection:0];
     TableCell *cell = (TableCell*)[self.collectionView cellForItemAtIndexPath:indexPath];
     NSString *string = [cell.channel safeStringForKey:@"channel_id"];
     NSMutableArray *array = [self.listData objectForKey:string];
-    if (array.count == 0) {
+//    if (array.count == 0) {
         [cell.tableCellDelegate tableCell:cell loadNewsListData:0 block:^{
             
         }];
-    }
+//    }
+    [self setChildChannelView:[channel safeArrayForKey:@"son"]];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -529,36 +613,6 @@
     [self.navigationController pushViewController:vc animated:YES];
 }
 
-- (void)reward:(NSNotification*)notification
-{/*
-    NSDictionary *userInfo = notification.userInfo;
-    NewsObject *news = [userInfo safeObjectForKey:@"data"];
-    self.rewardNews = news;
-    UIAlertController *vc = [UIAlertController alertControllerWithTitle:nil message:@"打赏金额" preferredStyle:UIAlertControllerStyleActionSheet];
-    UIAlertAction *ac1 = [UIAlertAction actionWithTitle:@"打赏1元" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        productId = @"1yuan";
-        self.rewardPrice = @1;
-        [self requestProductData:productId];
-    }];
-    UIAlertAction *ac2 = [UIAlertAction actionWithTitle:@"打赏3元" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        productId = @"3yuan";
-        self.rewardPrice = @3;
-        [self requestProductData:productId];
-    }];
-    UIAlertAction *ac3 = [UIAlertAction actionWithTitle:@"打赏8元" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        productId = @"8yuan";
-        self.rewardPrice = @8;
-        [self requestProductData:productId];
-    }];
-    UIAlertAction *ac0 = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
-    }];
-    [vc addAction:ac1];
-    [vc addAction:ac2];
-    [vc addAction:ac3];
-    [vc addAction:ac0];
-    [self presentViewController:vc animated:YES completion:nil];*/
-}
-
 - (void)tableCell:(TableCell *)cell loadNewsListData:(NSInteger)time block:(void (^)(void))block
 {
     NSInteger refreshtime = time == 0 ? 0 : time;
@@ -635,6 +689,7 @@
 
 - (void)timerForRedPoint
 {
+    return;
     NSString *lastUpdata = [[NSUserDefaults standardUserDefaults]objectForKey:@"kLastUpdataRedPoint"];
     NSDictionary *lastUpdataDict = [Tool stringToJson:lastUpdata];
     NSMutableDictionary *dict = [[NSMutableDictionary alloc]init];

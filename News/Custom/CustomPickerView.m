@@ -152,16 +152,16 @@ typedef enum: NSInteger{
 }
 
 - (void)setCustomArray:(NSArray*)array{
-    _customArray = array;
+    _customArray = @[array];
     [_pickerView reloadAllComponents];
 }
 
 - (void)getChannelList{
-    if (_customArray.count>0) {
-        return;
-    }
+//    if (_customArray.count>0) {
+//        return;
+//    }
     [SVProgressHUD show];
-    [HTTPClientInstance postMethod:@"act=channel" params:nil block:^(NSDictionary *data, NSString *error, int code, NSError *requestFailed) {
+    [HTTPClientInstance postMethod:@"act=channel&op=indexList" params:nil block:^(NSDictionary *data, NSString *error, int code, NSError *requestFailed) {
         [SVProgressHUD dismiss];
         if (code == 200) {
             NSDictionary *dict = [data safeDictionaryForKey:@"datas"];

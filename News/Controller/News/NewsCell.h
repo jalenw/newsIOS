@@ -15,7 +15,6 @@
 #define kNotificationShare   @"kNotificationShare"
 #define kNotificationLike    @"kNotificationLike"
 #define kNotificationReport  @"kNotificationReport"
-#define kNotificationReward  @"kNotificationReward"
 
 @interface NewsCell : UITableViewCell
 @property (weak, nonatomic) IBOutlet UILabel *timeLabel;

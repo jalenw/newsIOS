@@ -314,7 +314,7 @@
 }
 
 - (IBAction)reward:(UIButton *)sender {
-    [[NSNotificationCenter defaultCenter]postNotificationName:kNotificationReward object:nil userInfo:@{@"data":self.news}];
+//    [[NSNotificationCenter defaultCenter]postNotificationName:kNotificationReward object:nil userInfo:@{@"data":self.news}];
 }
 
 - (IBAction)reportNews:(UIButton *)sender {

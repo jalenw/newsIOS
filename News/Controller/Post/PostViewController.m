@@ -173,8 +173,16 @@
 - (void)customPickerViewDidSelected:(CustomPickerView *)view customDict:(NSDictionary *)dict
 {
     NSDictionary *dic = [dict safeDictionaryForKey:@"0"];
+    if ([dic safeArrayForKey:@"son"].count>0) {
+        CustomPickerView *picker = [CustomPickerView customPickerViewWithArray:[dic safeArrayForKey:@"son"] key:@"channel_content"];
+        picker.delegate = self;
+        [picker showPicker];
+    }
+    else
+    {
     self.channel = dic;
     self.channelField.text = [dic safeStringForKey:@"channel_content"];
+    }
 }
 
 - (void)customPickerViewDidSelected:(CustomPickerView *)view date:(NSDate *)date dateString:(NSString *)dateString

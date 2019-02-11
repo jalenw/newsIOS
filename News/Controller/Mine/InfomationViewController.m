@@ -108,10 +108,18 @@
 {
     _isSearch = YES;
     NSDictionary *channel = [dict safeDictionaryForKey:@"0"];
+    if ([channel safeArrayForKey:@"son"].count>0) {
+        CustomPickerView *picker = [CustomPickerView customPickerViewWithArray:[channel safeArrayForKey:@"son"] key:@"channel_content"];
+        picker.delegate = self;
+        [picker showPicker];
+    }
+    else
+    {
     self.channelField.text = [channel safeStringForKey:@"channel_content"];
     int channel_id = [channel safeIntForKey:@"channel_id"];
     [self.searchParam setObject:@(channel_id) forKey:@"channel_id"];
     [self.tableView.mj_header beginRefreshing];
+    }
 }
 
 - (void)customPickerViewDidSelected:(CustomPickerView *)view date:(NSDate *)date dateString:(NSString *)dateString
